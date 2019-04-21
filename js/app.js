@@ -1,5 +1,6 @@
 var model = {
   currentCat: null,
+  adminOnline: true,
   cats: [
     {
       clickCount: 0,
@@ -36,8 +37,12 @@ var model = {
     return this.cats[this.currentCat].clickCount;
   },
 
-  getName: function() {
+  getName: function() {              // returns name of the current cat
     return this.cats[this.currentCat].name;
+  },
+
+  setName: function(name) {
+    this.cats[this.currentCat].name = name;
   },
 
   getImgSrc: function() {
@@ -48,12 +53,18 @@ var model = {
     return this.cats.length;
   },
 
-  getSpecificCatName: function(i) {
+  getSpecificCatName: function(i) {   // return cat name based on index i
     return this.cats[i].name;
   },
 
   incrementClickCounter: function() {
-    this.cats[this.currentCat].clickCount++;
+    if (this.adminOnline == false) {   // don't make changes if Admin is on
+      this.cats[this.currentCat].clickCount++;
+    }
+  },
+
+  getImgSrc: function() {
+    return this.cats[this.currentCat].imgSrc;
   }
 };
 
@@ -64,6 +75,7 @@ var octopus = {
     model.currentCat = 0;
     catView.init();
     buttonView.init();
+    adminView.init();
   },
 
   incrementCounter: function() {
@@ -75,10 +87,9 @@ var octopus = {
     return model.currentCat;
   },
   getClickCount: function() {
-    console.log("octopus getClickCount " + model.getClickCount());
     return model.getClickCount();
   },
-  getName: function() {
+  getName: function() {             // returns name of current cat
     return model.getName();
   },
   getImgSrc: function() {
@@ -87,11 +98,31 @@ var octopus = {
   getNumCats: function() {
     return model.getNumCats();
   },
-  getSpecificCatName: function(i) {
+  getSpecificCatName: function(i) {  // returns name of cat specified by index i
     return model.getSpecificCatName(i);
   },
   setCurrentCat: function(i) {
     model.currentCat = i;
+  },
+
+  setName: function(name) {
+    model.setName(name);
+  },
+
+  getUrl: function() {
+    return model.getImgSrc();
+  },
+
+  adminOn: function() {
+    return model.adminOnline;
+  },
+
+  setAdminOffline: function() {
+    model.adminOnline = false;
+  },
+
+  setAdminOnline: function() {
+    model.adminOnline = true;
   }
 
 };
@@ -134,7 +165,6 @@ var buttonView = {
   render: function() {
       var elem, numCats;
       numCats = octopus.getNumCats();
-      debugger
       for(let i=0;i<numCats;i++) {
          elem = document.createElement('button');
          elem.textContent = octopus.getSpecificCatName(i);
@@ -143,6 +173,11 @@ var buttonView = {
            return function() {
              octopus.setCurrentCat(catCopy);
              catView.render();
+             // if admin is on, update the admin fields
+             if (octopus.adminOn()) {
+               console.log("admin is on, so update the fields with current cat info");
+               adminView.render();
+             }
            }
          })(i));
 
@@ -152,5 +187,98 @@ var buttonView = {
   }
 };
 
+var adminView = {
+  init: function() {
+    this.adminButton = document.getElementById('admin-button');
+    this.adminButton.addEventListener('click', (function(thisCopy) {
+      return function() {
+        if (octopus.adminOn() == true) {
+          console.log("hide it");
+          // thisCopy.adminSubElement.style.display = 'none';
+          thisCopy.hide();
+          octopus.setAdminOffline();
+        }
+        else {
+          console.log("show it");
+          // thisCopy.adminSubElement.style.display = 'block';
+          thisCopy.updateClickValue();  // in case anyone has clicked while admin offline
+          thisCopy.show();
+          octopus.setAdminOnline();
+        }
+      }
+    })(this));
+
+    this.adminElement = document.getElementById('admin-area');
+
+    this.adminSubElement = document.createElement('div');
+    this.adminSubElement.id = 'sub-admin';
+
+    this.nameLabel = document.createElement('label');
+    this.nameLabel.htmlFor = 'cat-name';
+    this.nameLabel.textContent = 'Cat Name:';
+    this.adminSubElement.appendChild(this.nameLabel);
+    this.nameField = document.createElement('input');
+    this.nameField.setAttribute('type', 'text');
+    this.nameField.name = ('cat-name');
+    this.nameField.defaultValue = octopus.getName();
+    this.adminSubElement.appendChild(this.nameField);
+
+    this.urlField = document.createElement('input');
+    this.urlField.setAttribute('type', 'text');
+    this.urlField.defaultValue = octopus.getUrl();
+    this.adminSubElement.appendChild(this.urlField);
+
+    this.numClicksField = document.createElement('input');
+    this.numClicksField.setAttribute('type', 'text');
+    this.numClicksField.defaultValue = octopus.getClickCount();
+    this.adminSubElement.appendChild(this.numClicksField);
+
+    this.saveButton = document.createElement('button');
+    this.saveButton.textContent = 'Save';
+    this.cancelButton = document.createElement('button');
+    this.cancelButton.textContent = 'Cancel';
+    this.cancelButton.addEventListener('click', (function(thisCopy) {
+      return function() {
+        console.log("hiding");
+        thisCopy.hide();
+      }
+    })(this));
+
+    this.adminSubElement.appendChild(this.saveButton);
+    this.adminSubElement.appendChild(this.cancelButton);
+
+    this.adminElement.appendChild(this.adminSubElement);
+
+  },
+
+  updateClickValue: function() {
+    this.numClicksField.defaultValue = octopus.getClickCount();
+  },
+
+  render: function() {
+    this.nameField.defaultValue = octopus.getName();
+    this.urlField.defaultValue = octopus.getUrl();
+    this.numClicksField.defaultValue = octopus.getClickCount();
+  },
+
+  hide: function() {
+    // hide the admin functions
+    this.adminSubElement.style.display = 'none';
+  },
+
+
+  show: function() {
+    // show the admin functions
+    this.adminSubElement.style.display = 'block';
+  },
+
+  save: function() {
+    // take the values from the form and update the model, via the octopus
+
+
+  }
+
+
+};
 
 octopus.init();
