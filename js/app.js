@@ -1,6 +1,6 @@
 var model = {
   currentCat: null,
-  adminOnline: true,
+  adminOnline: false,
   cats: [
     {
       clickCount: 0,
@@ -123,8 +123,19 @@ var octopus = {
 
   setAdminOnline: function() {
     model.adminOnline = true;
+  },
+
+  saveValues: function(name, url, clicks) {
+
+    model.cats[model.currentCat].name = name;
+    model.cats[model.currentCat].imgSrc = url;
+    model.cats[model.currentCat].clickCount = clicks;
+    debugger
   }
 
+  showValues: function() {
+    console.log("name of current cat is " + model.cats[model.currentCat].name);
+  }
 };
 
 
@@ -145,10 +156,7 @@ var catView = {
   render: function() {
     let currentCat = octopus.getCurrentCat();
     this.countElement.textContent = "Click Count " + octopus.getClickCount();
-    console.log("got clickcount of " + currentCat);
     this.catNameElement.textContent = octopus.getName();
-    // this.catImageElem.src = currentCat.imgSrc;
-    console.log("img src retrieved " + octopus.getImgSrc());
     this.catImageElement.src = octopus.getImgSrc();
   }
 
@@ -183,43 +191,43 @@ var buttonView = {
 
          this.catListElement.appendChild(elem);
       }
-
   }
 };
 
 var adminView = {
   init: function() {
     this.adminButton = document.getElementById('admin-button');
+
     this.adminButton.addEventListener('click', (function(thisCopy) {
       return function() {
         if (octopus.adminOn() == true) {
-          console.log("hide it");
-          // thisCopy.adminSubElement.style.display = 'none';
           thisCopy.hide();
           octopus.setAdminOffline();
         }
         else {
-          console.log("show it");
-          // thisCopy.adminSubElement.style.display = 'block';
           thisCopy.updateClickValue();  // in case anyone has clicked while admin offline
           thisCopy.show();
           octopus.setAdminOnline();
+        }
+        if (octopus.adminOn() == true) {
+          thisCopy.render();
         }
       }
     })(this));
 
     this.adminElement = document.getElementById('admin-area');
 
-    this.adminSubElement = document.createElement('div');
-    this.adminSubElement.id = 'sub-admin';
+    this.adminSubElement = document.createElement('form');
+    this.adminSubElement.style.display = 'none';
 
     this.nameLabel = document.createElement('label');
-    this.nameLabel.htmlFor = 'cat-name';
+    this.nameLabel.htmlFor = 'cat-name-field';
     this.nameLabel.textContent = 'Cat Name:';
     this.adminSubElement.appendChild(this.nameLabel);
     this.nameField = document.createElement('input');
     this.nameField.setAttribute('type', 'text');
-    this.nameField.name = ('cat-name');
+    this.nameField.name = ('cat-name-field');
+    this.nameField.id = ('cat-name-field');
     this.nameField.defaultValue = octopus.getName();
     this.adminSubElement.appendChild(this.nameField);
 
@@ -235,19 +243,34 @@ var adminView = {
 
     this.saveButton = document.createElement('button');
     this.saveButton.textContent = 'Save';
-    this.cancelButton = document.createElement('button');
-    this.cancelButton.textContent = 'Cancel';
-    this.cancelButton.addEventListener('click', (function(thisCopy) {
+    this.saveButton.addEventListener('click', (function(thisCopy) {
+
       return function() {
-        console.log("hiding");
-        thisCopy.hide();
-      }
-    })(this));
+       if (octopus.adminOn() == true) {
+         alert("hello");
+         thisCopy.save();
+         thisCopy.hide();
+       } };
+    })(this) );
+
+    this.cancelButton = document.createElement('input');
+    this.cancelButton.name = "cancel";
+    this.cancelButton.value = "cancel";
+    this.cancelButton.type = "submit";
+    this.cancelButton.textContent = 'Cancel';
 
     this.adminSubElement.appendChild(this.saveButton);
     this.adminSubElement.appendChild(this.cancelButton);
-
     this.adminElement.appendChild(this.adminSubElement);
+
+    // this.cancelButton.addEventListener('click', (function(thisCopy) {
+    //   return function() {
+    //     if (octopus.adminOn() == true) {
+    //       thisCopy.hide();
+    //       octopus.setAdminOffline();
+    //     }
+    //   }
+    // })(this));
 
   },
 
@@ -256,29 +279,54 @@ var adminView = {
   },
 
   render: function() {
-    this.nameField.defaultValue = octopus.getName();
-    this.urlField.defaultValue = octopus.getUrl();
-    this.numClicksField.defaultValue = octopus.getClickCount();
+    console.log("adminview render");
+    if (octopus.adminOn() == true) {
+      this.adminSubElement.reset();
+
+      this.nameField.textContent = octopus.getName();
+      this.nameField.value = octopus.getName();
+      this.urlField.textContent = octopus.getUrl();
+      this.urlField.value = octopus.getUrl();
+      this.numClicksField.textContent = octopus.getClickCount();
+      this.numClicksField.value = octopus.getClickCount();
+    }
+    else {
+      this.adminSubElement.style.display = 'none';
+    }
   },
 
   hide: function() {
     // hide the admin functions
+    console.log("HIDE ADMIN");
     this.adminSubElement.style.display = 'none';
+    tester = this.adminSubElement;
   },
 
 
   show: function() {
     // show the admin functions
-    this.adminSubElement.style.display = 'block';
+     this.adminSubElement.style.display = 'block';
   },
 
   save: function() {
     // take the values from the form and update the model, via the octopus
-
-
+    alert("SAVE");
+    let newName = document.getElementById("cat-name-field");
+    alert("will save values " + newName.value, this.urlField, this.numClicksField);
+    debugger
+    octopus.saveValues(newName.value, this.urlField, this.numClicksField);
   }
 
 
 };
 
+function saveValues() {
+  let name = document.getElementById("cat-name");
+  let url = document.getElementById("cat-url");
+  let clicks = document.getElementById("cat-clicks");
+
+  octopus.saveValues(name.textContent, url.textContent, clicks.textContent);
+}
+
+var tester;
 octopus.init();
